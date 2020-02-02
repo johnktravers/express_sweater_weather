@@ -10,38 +10,57 @@ const { URL, URLSearchParams } = require('url');
 
 const Geocode = require('../../../lib/objects/geocode');
 
-router.post('/', function(req, res, next) {
-  let location = req.body.location;
-  let apiKey = req.body.api_key;
+router.post('/', async function(req, res, next) {
+  let location = req.body.location || '';
+  let apiKey = req.body.api_key || '';
 
-  if (apiKey && location) {
-    let geocode = getGeocode(location);
-
-    database('users').where({ api_key: apiKey }).first()
-      .then(user => {
-        if (user) {
-          return user;
-        } else {
-          let errorMsg = 'Invalid API Key. Please try again.';
-          res.status(401).json({ errorMessage: errorMsg });
-        }
-      })
-      // Validate location here like user above
-      .then(user => createFavoriteLocation(user, geocode))
-      .then(geocode => res.status(200).json({
-        message: `${geocode.address} has been added to your favorites`
-      }))
-      .catch(error => {
-        res.status(500).json({ errorMessage: error })
-      });
-  } else if (!apiKey || !user) {
-      let errorMsg = 'Valid API key must be sent with this request.';
-      res.status(401).json({ errorMessage: errorMsg });
-  } else {
-      let errorMsg = 'Invalid Location. Please try again.';
-      res.status(400).json({ errorMessage: errorMsg });
+  try {
+    let user = await validateUser(apiKey);
+    let geocode = await validateLocation(location);
+    await createFavoriteLocation(user, geocode);
+    res.status(200).json({
+      message: `${geocode.address} has been added to your favorites`
+    });
+  } catch(error) {
+    res.status(error.status).json({
+      status: error.status,
+      message: error.message
+    });
   }
 });
+
+async function validateUser(apiKey) {
+  let user = await database('users').where({ api_key: apiKey }).first();
+  if (user) {
+    return user;
+  } else {
+    return new Promise((resolve, reject) => {
+      reject({ status: 401, message: 'Missing or invalid API key. Please try again.'});
+    })
+  }
+};
+
+async function validateLocation(location) {
+  let geocodeData = await getGeocodeData(location);
+  if (geocodeData) {
+    let geocode = await new Geocode(geocodeData);
+    return geocode;
+  } else {
+    return new Promise((resolve, reject) => {
+      reject({ status: 400, message: 'Location not found. Please try again.'});
+    })
+  }
+};
+
+async function createFavoriteLocation(user, geocode) {
+  let location_id = await database('locations').insert(
+    {address: geocode.address, lat: geocode.lat, long: geocode.long}, 'id'
+  );
+
+  await database('user_locations').insert(
+    {user_id: user.id, location_id: location_id[0]}
+  );
+};
 
 
 // Google Geocoding API Call
@@ -59,33 +78,6 @@ function getGeocodeData(location) {
     .then(json => json.results[0])
 
   return geocode_data;
-};
-
-async function getGeocode(location) {
-  try {
-    let geocode_data = await getGeocodeData(location);
-    let geocode = await new Geocode(geocode_data);
-    return geocode;
-  } catch(error) {
-    console.log(error);
-  }
-}
-
-function createFavoriteLocation(user, geocode) {
-    geocode
-      .then(geocode => {
-      return database('locations').insert(
-        {address: geocode.address, lat: geocode.lat, long: geocode.long}, 'id'
-      );
-    })
-    .then(location_id => {
-      return database('user_locations').insert(
-        {user_id: user.id, location_id: location_id[0]}
-      );
-    })
-    .catch(error => console.log(error));
-
-    return geocode;
 };
 
 module.exports = router;
