@@ -9,6 +9,25 @@ const fetch = require('node-fetch');
 const { URL, URLSearchParams } = require('url');
 
 const Geocode = require('../../../lib/objects/geocode');
+const Forecast = require('../../../lib/objects/forecast');
+const CurrentForecast = require('../../../lib/objects/currentForecast');
+
+
+router.get('/', async function(req, res, next) {
+  let apiKey = req.body.api_key || '';
+
+  try {
+    let user = await validateUser(apiKey)
+    let locations = await database.from('locations')
+      .innerJoin('user_locations', 'user_locations.location_id', 'locations.id')
+      .where('user_locations.user_id', user.id)
+
+    let forecasts = await getFavoritesForecasts(locations);
+    res.status(200).json({ favorite_locations: forecasts })
+  } catch {
+    res.status(401).json({ status: 401, message: 'Missing or invalid API key. Please try again.'})
+  }
+});
 
 router.post('/', async function(req, res, next) {
   let location = req.body.location || '';
@@ -53,13 +72,25 @@ async function validateLocation(location) {
 };
 
 async function createFavoriteLocation(user, geocode) {
-  let location_id = await database('locations').insert(
-    {address: geocode.address, lat: geocode.lat, long: geocode.long}, 'id'
-  );
+  let location = await database('locations')
+    .where({ lat: geocode.lat, long: geocode.long}).first();
 
-  await database('user_locations').insert(
-    {user_id: user.id, location_id: location_id[0]}
-  );
+  if (location) {
+    var location_id = await [location.id];
+  } else {
+    var location_id = await database('locations').insert(
+      {address: geocode.address, lat: geocode.lat, long: geocode.long}, 'id'
+    );
+  }
+
+  let user_location = await database('user_locations')
+    .where({ location_id: location_id[0], user_id: user.id }).first();
+
+  if (!user_location) {
+    await database('user_locations').insert(
+      {user_id: user.id, location_id: location_id[0]}
+    );
+  }
 };
 
 
@@ -79,5 +110,32 @@ function getGeocodeData(location) {
 
   return geocode_data;
 };
+
+// Dark Sky API Call
+
+function getForecast(geocode) {
+  let apiKey = process.env.DARK_SKY_API_KEY;
+  let url = new URL(`https://api.darksky.net/forecast/${apiKey}/${geocode.lat},${geocode.long}`);
+
+  let forecast = fetch(url)
+    .then(response => response.json())
+    .then(json => createCurrentForecast(geocode, json))
+    .catch(error => console.log(error));
+
+  return forecast;
+};
+
+function createCurrentForecast(geocode, forecast_data) {
+  return {
+    location: geocode.address,
+    current_weather: new CurrentForecast(forecast_data.currently)
+  };
+}
+
+async function getFavoritesForecasts(locations) {
+  return Promise.all(
+    locations.map(location => getForecast(location))
+  );
+}
 
 module.exports = router;
