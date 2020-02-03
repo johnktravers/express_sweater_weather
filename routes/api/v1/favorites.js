@@ -72,13 +72,25 @@ async function validateLocation(location) {
 };
 
 async function createFavoriteLocation(user, geocode) {
-  let location_id = await database('locations').insert(
-    {address: geocode.address, lat: geocode.lat, long: geocode.long}, 'id'
-  );
+  let location = await database('locations')
+    .where({ lat: geocode.lat, long: geocode.long}).first();
 
-  await database('user_locations').insert(
-    {user_id: user.id, location_id: location_id[0]}
-  );
+  if (location) {
+    var location_id = await [location.id];
+  } else {
+    var location_id = await database('locations').insert(
+      {address: geocode.address, lat: geocode.lat, long: geocode.long}, 'id'
+    );
+  }
+
+  let user_location = await database('user_locations')
+    .where({ location_id: location_id[0], user_id: user.id }).first();
+
+  if (!user_location) {
+    await database('user_locations').insert(
+      {user_id: user.id, location_id: location_id[0]}
+    );
+  }
 };
 
 
