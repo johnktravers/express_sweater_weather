@@ -1,19 +1,21 @@
 language: node_js
 node_js:
-  - "stable"
+- stable
 cache:
   directories:
-    - "node_modules"
+  - node_modules
 services:
-  - postgresql
-
+- postgresql
 before_install:
 - npm update
 install:
 - npm install
 script:
 - npm test
-
 before_script:
-  - psql -c 'create database sweater_weather_test;' -U postgres
-  - knex migrate:latest --env test
+- psql -c 'create database sweater_weather_test;' -U postgres
+- knex migrate:latest --env test
+env:
+  global:
+  - secure: XkhnsSTQnAttRtlXDndWSY8JsARfQXlXxIWy7FzXJ/5BOQWIWw5R6fuo4A80w23NDX6vfqKFhBkBnfQzCoHV96HmDN7hQP0AmcqA6bfDBDg75veLGQ4NOVsabmA2vL26x3Xq+Y6u3B5uPRF2AGXR4FjG8jOGgFxLsrtsYllz1za3LmfDW4YiREaXIrpMVNpS39c0z2Dwt3Bpy4wFNNc7VdNvdLVtqf5rwS39HxiurHT8IzyNWJ9eWbVKkTzBWS2t4UX+wOwIDPfSTlKWoYgm4Fa/YK/gg366vyJKRar/3MSiEKjcaVMwMn9jgSlZY+PpuE7Hlukf4/zgkhPgOEWP8XhfidqZCwpAyw5ONHR7l0CK07301j6fY63t8+YPIo0hSvFBjTl5wpB2WQH6GIt9X7fqV1ybD+nLRrtE4uLXgD7nSdO+qo7CqpyCAA9eTM+Y2ncfS43KaLoRGucBWceiN2MQCgePEEeAWtou7bYr7aSTILKpx33qByPp8JxGUgde4EjfGJVaQP0zSopDv4Bc4pz1YAOuqS+H6UUe7lFJv+a3E85nPV8jCAAo8JMD/nzeePkhYXGlljTRHnIn+YWVZYJtjsdQLZdvY45dQgiTPwAFsEEGmHAZjY/Oi6OhYcx8NV+Jleuxyc9nZ2uQfAvbWYwqqiF24ktpEfQCuypjRMs=
+  - secure: JAWa5/gV+Ohc+nD3euvpSc2F5d+CichI3A7A7GfmYzdGc5TIuPt6AW60lac1jyJy2fVoww2kL3E4WK2/ey67TZr1xYvCUJKKVpp8G+R10/e8bypzjBXhlnrz/QUy9HpdgkPs3US+Z37zW63x4sMwaN3eZDhpC5PlDthH8yYefOA2rCs2oGitxYdZVYM3xADXMrmEE24v9kLb7JJZNwtPWzeVl+iRwl1PYsY+huBYl4kfSJGmfgN/b/PJmIIqUnymCnct0wmYLUfthaxCJLT0YRFMN8C+yubK/imqKOENVVLtqN9R6QkPqpQ0TYQDk/mXfYcQf/KAAAphMb8oRyrwynahHw2ZFy40Bd2nO2jksWI7Mn87z0DS765NZccTeYYehLKDqaVSb9YZBZhlCqjLYQ2i716oFtsFf9dficNTQ7upn+LXgwmhWDqKdGuuju/BdCUeF+mVXiWpv0MWSR/Y4VOBvI9ao+E23Bge9Ks9vbB72oIlVOKBdHVh9RqNmr4xatOpX1QCLXoBQhpKk3Skv6uvEWAALRCfLgeHsjyNMMfsvuz4mjQ5AeEZDIA/qqXNpgyAGlLA14fD/bTCzoPvlEhF8a7qe60ppJVnhwIOF+4G6e2mtUMq1KIB3mxxsBaC34sEDwAodwKN+/B23aXmj84fS9o6gK8iIBSZZU6fWic=
