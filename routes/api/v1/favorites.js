@@ -48,6 +48,23 @@ router.post('/', async function(req, res, next) {
   }
 });
 
+router.delete('/', async function(req, res, next) {
+  let location = req.body.location || '';
+  let apiKey = req.body.api_key || '';
+
+  try {
+    let user = await validateUser(apiKey);
+    let geocode = await validateLocation(location);
+    await removeFavoriteLocation(user, geocode);
+    res.status(204).send()
+  } catch(error) {
+    res.status(error.status).json({
+      status: error.status,
+      message: error.message
+    });
+  }
+});
+
 async function validateUser(apiKey) {
   let user = await database('users').where({ api_key: apiKey }).first();
   if (user) {
@@ -92,6 +109,21 @@ async function createFavoriteLocation(user, geocode) {
     );
   }
 };
+
+async function removeFavoriteLocation(user, geocode) {
+  let location = await database('locations')
+    .where({ lat: geocode.lat, long: geocode.long}).first();
+
+  if (location) {
+    return await database('user_locations')
+      .where({user_id: user.id, location_id: location.id})
+      .del()
+  } else {
+    return new Promise((resolve, reject) => {
+      reject({ status: 400, message: 'Location not found in favorites. Please try again.'});
+    })
+  }
+}
 
 
 // Google Geocoding API Call
