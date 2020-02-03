@@ -1,74 +1,84 @@
-# All your Express base are belong to us
+# Express Sweater Weather
 
-[![Build Status](https://travis-ci.com/turingschool-examples/all-your-base.svg?branch=master)](https://travis-ci.com/turingschool-examples/all-your-base)
+[![Build Status](https://travis-ci.com/johnktravers/express_sweater_weather.svg?branch=master)](https://travis-ci.com/johnktravers/express_sweater_weather)
 
-## Getting started
-To use this repo, you’ll need to `fork` the repo as your own. Once you have done that, you’ll need to run the following command below to get everything up and running. 
+## Introduction
 
-#### Installing necessary dependencies
-The easiest way to get started is to run the following command. This will pull down any necessary dependencies that your app will require. You can think of this command as something incredibly similar to `bundle install` in Rails. 
+This application is a backend service built in Node.js and Express to expose endpoints related to geographical locations and weather. A user can use the API key attached to their account to see the forecast for a given location, add a location to their list of favorites, see the current weather at all of their favorite locations, and remove a favorite location.
 
-`npm install`
+## Initial Setup
 
-#### Set up your local database
-You’ll need to figure out a name for your database. We suggest calling it something like `sweater_weather_dev`.  
+This application is deployed to Heroku. You can find it [here](https://express-sweater-weather-jtravs.herokuapp.com/).
 
-To get things set up, you’ll need to access your Postgres instance by typing in `psql` into your terminal. Once there, you can create your database by running the comment `CREATE DATABASE PUT_DATABASE_NAME_HERE_dev;`. 
+In order to setup this application locally, you will need to use Node Package Manager to install dependencies using the following command:
 
-Now you have a database for your new project.
+```
+npm install
 
-#### Migrations
-Once you have your database setup, you’ll need to run some migrations (if you have any). You can do this by running the following command: 
+```
 
-`knex migrate:latest`
+You will also have to setup a development database in PostgreSQL using the following commands:
 
-
-Instructions to create database, run migrations, and seed: 
 ```
 psql
-CREATE DATABASE DATABASE_NAME_dev;
+CREATE DATABASE sweater_weather_dev;
 \q
 
 knex migrate:latest
 knex seed:run
 ```
 
-#### Set up your test database
-Most of the setup is going to be same as the one you did before. You’ll notice one small difference with setting the environment flag to `test`.  
+## Testing Instructions
+
+In order to run tests locally, you will first need to setup a test database. You can do so using the following commands:
 
 ```
 psql
-CREATE DATABASE DATABASE_NAME_test;
+CREATE DATABASE sweater_weather_test;
 \q
 
 knex migrate:latest --env test
 ```
 
-## Running your tests
-Running tests are simple and require you to run the following command below: 
+After setting up the test database, you can run the tests using this command:
 
-`npm test`
-
-When the tests have completed, you’ll get a read out of how things panned out. The tests will be a bit more noisy than what you’re used to, so be prepared. 
-
-## Setting up your production environment
-This repo comes with a lot of things prepared for you. This includes production ready configuration. To get started, you’ll need to do a few things. 
-
-- Start a brand new app on the Heroku dashboard 
-- Add a Postgres instance to your new Heroku app
-- Find the URL of that same Postgres instance and copy it. It should look like a long url. It may look something like like `postgres://sdflkjsdflksdf:9d3367042c8739f3...`.
-- Update your `knexfile.js` file to use your Heroku database instance. You’ll see a key of `connection` with a value of an empty string. This is where you’ll paste your new Postgres instance URL. 
-
-Once you’ve set all of that up, you’ll need to `add the remote` to your new app. This should work no differently than how you’ve done it with any Rails project. Adding this remote will allow you to run `git push heroku master`. 
-
-Once you’ve done that, you’ll need to `bash` into your Heroku instance and get some things set up. 
-
-- Run the following commands to get started:
 ```
-heroku run bash
-npm install
-nom install -g knex
-knex migrate:latest
+npm test
 ```
 
-This will install any dependencies, install Knex, and migrate any changes that you’ve made to the database. 
+## Application Instructions
+
+This application consists of four endpoints, each of which requires a body and the following headers:
+
+```
+Content-Type: application/json
+Accept: application/json
+```
+
+#### 1. `GET /api/v1/forecast?location=<LOCATION>`
+
+This endpoint requires a body containing your API key in JSON format (`{ api_key: <API_KEY> }`). It returns a a weather forecast of the given location, with current weather, hourly forecast data for the next 8 hours, and daily weather data for the next 7 days.
+
+#### 2. `POST /api/v1/favorites`
+
+This endpoint requires a body containing your API key and a location in JSON format (`{ api_key: <API_KEY>, location: <LOCATION> }`). It adds the given location to your list of favorites and returns a JSON response indicating the successful addition. You can then use the next endpoint to see all of your favorite locations.
+
+#### 3. `GET /api/v1/favorites`
+
+This endpoint requires a body containing your API key in JSON format (`{ api_key: <API_KEY> }`). It returns all of your favorite locations and their current weather, including temperature, a summary of the weather, humidity, visibility, and other data attributes.
+
+#### 4. `DELETE /api/v1/favorites`
+
+This endpoint requires a body containing your API key and a location in JSON format (`{ api_key: <API_KEY>, location: <LOCATION> }`). It deletes the given location from your list of favorites.
+
+## Schema Design
+
+The schema for this application consists of two tables that have a many-to-many relationship with each other: users and locations. The locations table has address, latitude, and longitude columns. The latitude and longitude, together, are guaranteed to be unique.
+
+## Tech Stack
+
+This application uses Node.js and the Express framework for backend scaffolding, Knex for an ORM, and Jest for testing.
+
+## Core Contributors
+
+Because this was a solo project, I (John Travers), am the only contributor in terms of written code. However, [Ryan Hantak](https://github.com/rhantak) provided advice and direction through PR reviews.
