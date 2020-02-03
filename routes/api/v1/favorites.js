@@ -25,7 +25,7 @@ router.get('/', async function(req, res, next) {
     let forecasts = await getFavoritesForecasts(locations);
     res.status(200).json({ favorite_locations: forecasts })
   } catch {
-    res.status(404).json({ error: '404 Not Found' })
+    res.status(401).json({ status: 401, message: 'Missing or invalid API key. Please try again.'})
   }
 });
 
